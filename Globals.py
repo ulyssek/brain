@@ -1,0 +1,17 @@
+TRAIN_FILE      = "../data/training.csv"
+VALIDATION_FILE = "UNDEFINED"
+TEST_FILE       = "../data/test.csv"
+TRAIN_LEN       = 15786886
+TEST_LEN        = 35066
+
+ID_POSITION    = 0
+BRAND_POSITION = 6
+C3_ID_POSITION = 3
+
+BRAND_POSITION_TEST = 3
+
+NO_BRAND = "AUCUNE"
+
+DELIMITER = ";"
+
+RESULT_PATH = "../results/"

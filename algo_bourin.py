@@ -59,7 +59,6 @@ for row in spam_reader:
   if not(int(count) % int(train_len/10)):
     print "%s%% done" % (100*count/float(train_len),)
 
-print count
 
 ##################################################################################
 ## DEFINING CATEGORY FUNCTION
