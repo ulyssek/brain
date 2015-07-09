@@ -1,5 +1,6 @@
 import csv
 import sys
+import math
 from IModel   import *
 from Globals  import *
 from parser   import parser
@@ -98,54 +99,65 @@ class PriceAverage(Model):
     ##################################################################################
     ## INIT FUNCTIONS
 
-    def __init__(self,train=False,**kwargs):
+    def __init__(self,train=False,limit = None,**kwargs):
       self.train = train
       self.score = 0
       Model.__init__(self,**kwargs)
       self.name = "PRICE_AVERAGE"
       self.output_name = RESULT_PATH + self.name + ".csv"
+      self.path = TRAIN_FILE
+      self.train_len = TRAIN_LEN
+      self.price_position = PRICE_POSITION
+      self.id_position = C3_ID_POSITION
+      self.prix_max = 0
+      if limit is not None:
+        self.train_len = min(TRAIN_LEN,limit)
+      self.pas = 0.5
+
 
     ##################################################################################
     ## BUILDING FUNCTIONS
 
     def build(self):
-      path = TRAIN_FILE
-      train_len = TRAIN_LEN
-      price_position = PRICE_POSITION
-      id_position = C3_ID_POSITION
-
-      count = 0
-      limit = None
-
-      if limit is not None:
-        train_len = min(TRAIN_LEN,limit)
-      else:
-        train_len = TRAIN_LEN
+      
+      prices={}
  
-      spam_reader = parser(path)
+      spam_reader = parser(self.path)
 
-      print "computing brands dictionary"
+      print "computing prices dictionary"
 
       for row in spam_reader:
-        brand = row[brand_position]
-        if brand == '':
-          brand = no_brand
-       
-        if brand in brands.keys():
-          if row[id_position] in brands[brand].keys():
-            brands[brand][row[id_position]] += 1
+        price = self.transform(row[self.price_position])
+        if price in prices.keys():
+          if row[id_position] in prices[price].keys():
+            prices[price][row[id_position]] += 1
           else:
-            brands[brand][row[id_position]] = 1
+            prices[price][row[id_position]] = 1
         else:
-          brands[brand] = {row[id_position] : 1}
+          prices[price] = {row[id_position] : 1}
         count += 1
-        if limit is not None and count == limit:
+        if count == self.train_len:
           break
-        if not(int(count) % int(train_len/10)):
-          print "%s%% done" % (100*count/float(train_len),)
-      print "100% done"
+        
+      self.prices = prices
 
-      self.brands = brands
+  ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
+  def transform(self, prix):
+    inf=int(math.exp(prix)/self.pas)*self.pas
+    inf=math.log(inf)
+    return inf
+    
+
+  ###### DEFINIR LE PRIX MAX
+  def define_price_max(self):
+    spam_reader = parser(self.path)
+    count=0
+    for row in spam_reader:
+      if float(row[self.price_position])>self.prix_max:
+        self.prix_max=float(row[self.price_position])
+      count+=1
+      if count == self.train_len:
+        break
 
 
 
