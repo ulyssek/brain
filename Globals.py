@@ -1,7 +1,8 @@
-TRAIN_FILE      = "../data/training.csv"
-VALIDATION_FILE = "UNDEFINED"
+TRAIN_FILE      = "../data/training_set.csv"
+VALIDATION_FILE = "../data/validation_set.csv"
 TEST_FILE       = "../data/test.csv"
-TRAIN_LEN       = 15786886
+TRAIN_LEN       = 13002596
+VALIDATION_LEN  = 2784290
 TEST_LEN        = 35066
 
 ID_POSITION    = 0

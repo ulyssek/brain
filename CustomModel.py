@@ -18,6 +18,7 @@ class BrandAverage(Model):
 
     def __init__(self,train=False,**kwargs):
       self.train = train
+      self.score = 0
       Model.__init__(self,**kwargs)
       self.name = "BRAND_AVERAGE"
       self.output_name = RESULT_PATH + self.name + ".csv"
@@ -34,7 +35,7 @@ class BrandAverage(Model):
 
       count = 0
       brands = {}
-      limit = 1000
+      limit = None
 
       if limit is not None:
         train_len = min(TRAIN_LEN,limit)
@@ -62,6 +63,7 @@ class BrandAverage(Model):
           break
         if not(int(count) % int(train_len/10)):
           print "%s%% done" % (100*count/float(train_len),)
+      print "100% done"
 
       self.brands = brands
 
@@ -99,6 +101,8 @@ class BrandAverage(Model):
         file_name       = VALIDATION_FILE
         brand_position  = BRAND_POSITION
         file_len        = TRAIN_LEN
+        validation_len  = VALIDATION_LEN
+        cat_position    = C3_ID_POSITION
       else:
         file_name       = TEST_FILE
         brand_position  = BRAND_POSITION_TEST
@@ -106,16 +110,35 @@ class BrandAverage(Model):
 
       spam_reader = parser(file_name)
       count = 0
+      score = 0
+      limit = None
 
+      if limit is not None:
+        file_len = min(file_len,limit)
+      else:
+        file_len = file_len
+ 
+
+      print "computing output"
       next(spam_reader)
       for item in spam_reader:
         cat = self.compute_category(item)
-        result.append([item[ID_POSITION]])
+        if self.train:
+          real_cat = item[cat_position]
+          score += int(real_cat == cat)
+        else:  
+          result.append([item[ID_POSITION]])
         count += 1
         if not(int(count) % int(file_len/10)):
           print "%s%% done" % (100*count/float(file_len),)
-
-      self.result = result
+        if (limit is not None) & (count == limit):
+          break
+      print "100% done"
+      if self.train:
+        self.score = score/float(validation_len)*100
+        print "score : %s " % (self.score,)
+      else:
+        self.result = result
         
     ##################################################################################
     ## PRINTING FUNCTIONS
@@ -134,7 +157,8 @@ class BrandAverage(Model):
     def run(self):
       self.build()
       self.compute_output()
-      self.print_output()
+      if not self.train:
+        self.print_output()
 
 
 
