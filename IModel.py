@@ -16,6 +16,11 @@ class Model:
 
   def build(self):
     raise Exception("Not Implemented yet")
+
+    ##################################################################################
+    ## CATEGORY COMPUTING FUNCTIONS
+  def compute_category(self,item):
+    raise Exception("Not Implemented yet")
  
   def compute_output(self):
     result = [["Id_Produit","Id_Categorie"]]
@@ -34,7 +39,7 @@ class Model:
     spam_reader = parser(file_name)
     count = 0
     score = 0
-    limit = 10
+    limit = None
 
     if limit is not None:
       file_len = min(file_len,limit)
@@ -63,6 +68,8 @@ class Model:
     else:
       self.result = result
 
+  ##################################################################################
+  ## PRINTING FUNCTIONS
 
   def print_output(self):
     print "Writing results in output file"
@@ -72,7 +79,8 @@ class Model:
     a.writerows(self.result)
     output_file.close()
 
-
+  ##################################################################################
+  ## RUNNING FUNCTIONS
 
   def run(self):
     self.build()

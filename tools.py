@@ -76,3 +76,11 @@ def smart_plot(liste, x_list = None, figure = False, names = None,xlabel=None,yl
   plt.show()
   return plt
 
+
+def smart_in(dico,key):
+  try:
+    dico[key]
+    return True
+  except KeyError:
+    return False
+    
