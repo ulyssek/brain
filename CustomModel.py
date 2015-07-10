@@ -121,13 +121,15 @@ class PriceAverage(Model):
     def build(self):
       
       prices={}
+      l=[]
  
       spam_reader = parser(self.path)
 
-      print "computing prices dictionary"
+      print "computing prices dictionary and prices list"
 
       for row in spam_reader:
         price = self.transform(row[self.price_position])
+        l.append(price)
         if price in prices.keys():
           if row[id_position] in prices[price].keys():
             prices[price][row[id_position]] += 1
@@ -137,16 +139,17 @@ class PriceAverage(Model):
           prices[price] = {row[id_position] : 1}
         count += 1
         if count == self.train_len:
+          sort(l)
           break
         
       self.prices = prices
+      self.p_list = l
 
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, prix):
-    inf=int(math.exp(prix)/self.pas)*self.pas
-    inf=math.log(inf)
+    inf=int(math.log(prix)/self.pas)*self.pas
     return inf
-    
+
 
   ###### DEFINIR LE PRIX MAX
   def define_price_max(self):
@@ -161,29 +164,36 @@ class PriceAverage(Model):
 
 
 
-    ##################################################################################
+##################################################################################
     ## CATEGORY COMPUTING FUNCTIONS
 
-    def compute_category(self,item):
+
+  def intervalle(self, item)
+
+  def compute_category(self,item):
       #Core function, associating an item with a category
       #item is a vector just read from the file
       if self.train:
-        brand_position = BRAND_POSITION
+        price_position = PRICE_POSITION
       else:
-        brand_position = BRAND_POSITION_TEST
-      no_brand = NO_BRAND
-      if item[brand_position] not in self.brands.keys():
-        brand = no_brand
-      else:
-        brand = item[brand_position]
-      cat = self.cat_from_brand(brand)
+        price_position = PRICE_POSITION_TEST
+      price = item[price_position]
+      price = transform(price)
+      
+      if price not in self.p_list:
+        self.p_list.append(price)
+          if price-self.p_list[self.p_list.index(price)-1]<self.p_list[self.p_list.index(price)+1] - 1:
+            price=self.p_list[self.p_list.index(price)-1]
+          else:
+            price=self.p_list[self.p_list.index(price)+1]
+      cat = self.cat_from_price(price)
       return cat
 
 
 
-    def cat_from_brand(self,brand):
-      brand_dict = self.brands[brand]
-      return max(brand_dict.keys(),key=lambda x : brand_dict[x])
+    def cat_from_price(self,price):
+      price_dict = self.prices[price]
+      return max(price_dict.keys(),key=lambda x : price_dict[x])
 
     
     def compute_output(self):
@@ -191,13 +201,13 @@ class PriceAverage(Model):
       id_position = ID_POSITION
       if self.train:
         file_name       = VALIDATION_FILE
-        brand_position  = BRAND_POSITION
+        price_position  = PRICE_POSITION
         file_len        = TRAIN_LEN
         validation_len  = VALIDATION_LEN
         cat_position    = C3_ID_POSITION
       else:
         file_name       = TEST_FILE
-        brand_position  = BRAND_POSITION_TEST
+        price_position  = PRICE_POSITION_TEST
         file_len        = TEST_LEN
 
       spam_reader = parser(file_name)
@@ -231,9 +241,6 @@ class PriceAverage(Model):
         print "score : %s " % (self.score,)
       else:
         self.result = result
-
-
-
 
 
  
