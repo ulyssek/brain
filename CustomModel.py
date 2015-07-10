@@ -108,58 +108,60 @@ class BrandAverage(Model):
 
 class PriceAverage(Model):
 
-    ##################################################################################
-    ## INIT FUNCTIONS
+  ##################################################################################
+   ## INIT FUNCTIONS
 
-    def __init__(self,train=False,limit = None,**kwargs):
-      self.train = train
-      self.score = 0
-      Model.__init__(self,**kwargs)
-      self.name = "PRICE_AVERAGE"
-      self.output_name = RESULT_PATH + self.name + ".csv"
-      self.path = TRAIN_FILE
-      self.train_len = TRAIN_LEN
-      self.price_position = PRICE_POSITION
-      self.id_position = C3_ID_POSITION
-      self.prix_max = 0
-      if limit is not None:
-        self.train_len = min(TRAIN_LEN,limit)
-      self.pas = 0.5
+  def __init__(self,train=False,limit = None,**kwargs):
+    self.train = train
+    self.score = 0
+    Model.__init__(self,**kwargs)
+    self.name = "PRICE_AVERAGE"
+    self.output_name = RESULT_PATH + self.name + ".csv"
+    self.path = TRAIN_FILE
+    self.train_len = TRAIN_LEN
+    self.price_position = PRICE_POSITION
+    self.id_position = C3_ID_POSITION
+    self.prix_max = 0
+    if limit is not None:
+      self.train_len = min(TRAIN_LEN,limit)
+    self.pas = 0.5
 
 
-    ##################################################################################
-    ## BUILDING FUNCTIONS
+  ##################################################################################
+  ## BUILDING FUNCTIONS
 
-    def build(self):
-      
-      prices={}
-      l=[]
- 
-      spam_reader = parser(self.path)
+  def build(self):
+    prices={}
+    l=[]
+    spam_reader = parser(self.path)
+    spam_reader.next()
+    count=0
 
-      print "computing prices dictionary and prices list"
+    print "computing prices dictionary and prices list"
 
-      for row in spam_reader:
-        price = self.transform(row[self.price_position])
-        l.append(price)
-        if price in prices.keys():
-          if row[id_position] in prices[price].keys():
-            prices[price][row[id_position]] += 1
-          else:
-            prices[price][row[id_position]] = 1
+    for row in spam_reader:
+      if float(row[self.price_position])<=0:
+        continue
+      price = self.transform(float(row[self.price_position]))
+      l.append(price)
+      if price in prices.keys():
+        if row[self.id_position] in prices[price].keys():
+          prices[price][row[self.id_position]] += 1
         else:
-          prices[price] = {row[id_position] : 1}
-        count += 1
-        if count == self.train_len:
-          sort(l)
-          break
+          prices[price][row[self.id_position]] = 1
+      else:
+        prices[price] = {row[self.id_position] : 1}
+      count += 1
+      if count == self.train_len:
+        sort(l)
+        break
         
-      self.prices = prices
-      self.p_list = l
+    self.prices = prices
+    self.p_list = l
 
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
-  def transform(self, prix):
-    inf=int(math.log(prix)/self.pas)*self.pas
+  def transform(self, p):
+    inf=int(math.log(p)/self.pas)*self.pas
     return inf
 
 
@@ -179,80 +181,32 @@ class PriceAverage(Model):
 ##################################################################################
     ## CATEGORY COMPUTING FUNCTIONS
 
-
-  def intervalle(self, item)
-
   def compute_category(self,item):
-      #Core function, associating an item with a category
-      #item is a vector just read from the file
-      if self.train:
-        price_position = PRICE_POSITION
-      else:
-        price_position = PRICE_POSITION_TEST
-      price = item[price_position]
-      price = transform(price)
-      
+    #Core function, associating an item with a category
+    #item is a vector just read from the file
+    if self.train:
+      price_position = PRICE_POSITION
+    else:
+      price_position = PRICE_POSITION_TEST
+    price = float(item[price_position])
+    if price <= 0:
+      cat = 1000015309
+    else:
+      price = self.transform(price) 
       if price not in self.p_list:
         self.p_list.append(price)
-          if price-self.p_list[self.p_list.index(price)-1]<self.p_list[self.p_list.index(price)+1] - 1:
-            price=self.p_list[self.p_list.index(price)-1]
-          else:
-            price=self.p_list[self.p_list.index(price)+1]
+        if price-self.p_list[self.p_list.index(price)-1]<self.p_list[self.p_list.index(price)+1]-price:
+          price=self.p_list[self.p_list.index(price)-1]
+        else:
+          price=self.p_list[self.p_list.index(price)+1]
       cat = self.cat_from_price(price)
       return cat
 
 
 
-    def cat_from_price(self,price):
-      price_dict = self.prices[price]
-      return max(price_dict.keys(),key=lambda x : price_dict[x])
+  def cat_from_price(self,price):
+    price_dict = self.prices[price]
+    return max(price_dict.keys(),key=lambda x : price_dict[x])
 
-    
-    def compute_output(self):
-      result = [["Id_Produit","Id_Categorie"]]
-      id_position = ID_POSITION
-      if self.train:
-        file_name       = VALIDATION_FILE
-        price_position  = PRICE_POSITION
-        file_len        = TRAIN_LEN
-        validation_len  = VALIDATION_LEN
-        cat_position    = C3_ID_POSITION
-      else:
-        file_name       = TEST_FILE
-        price_position  = PRICE_POSITION_TEST
-        file_len        = TEST_LEN
-
-      spam_reader = parser(file_name)
-      count = 0
-      score = 0
-      limit = None
-
-      if limit is not None:
-        file_len = min(file_len,limit)
-      else:
-        file_len = file_len
- 
-
-      print "computing output"
-      next(spam_reader)
-      for item in spam_reader:
-        cat = self.compute_category(item)
-        if self.train:
-          real_cat = item[cat_position]
-          score += int(real_cat == cat)
-        else:  
-          result.append([item[ID_POSITION]])
-        count += 1
-        if not(int(count) % int(file_len/10)):
-          print "%s%% done" % (100*count/float(file_len),)
-        if (limit is not None) & (count == limit):
-          break
-      print "100% done"
-      if self.train:
-        self.score = score/float(validation_len)*100
-        print "score : %s " % (self.score,)
-      else:
-        self.result = result
-
-
+   
  
