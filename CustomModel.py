@@ -5,6 +5,7 @@ from IModel   import *
 from Globals  import *
 from parser   import parser
 from tools    import smart_in
+from dico     import dico_mots_clefs
 
 
 csv.field_size_limit(sys.maxsize)
@@ -189,8 +190,8 @@ class PriceAverage(Model):
     else:
       price_position = PRICE_POSITION_TEST
     price = float(item[price_position])
-    if price <= 0:
-      cat = 1000015309
+  #  if price <= 0:
+  #    cat = 1000015309
     else:
       price = self.transform(price) 
       if price not in self.p_list:
@@ -208,5 +209,49 @@ class PriceAverage(Model):
     price_dict = self.prices[price]
     return max(price_dict.keys(),key=lambda x : price_dict[x])
 
-   
+
+class DescripAverage(Model):
+
+  ##################################################################################
+   ## INIT FUNCTIONS
+
+  def __init__(self,train=False,limit = None,**kwargs):
+    self.score = 0
+    Model.__init__(self,**kwargs)
+    self.name = "DESCIP_AVERAGE"
+    self.output_name = RESULT_PATH + self.name + ".csv"
+    self.dico = dico_mots_clefs(self)
+    self.l = list_mots_clefs(self)
+    
+  ##################################################################################
+  ## BUILDING FUNCTIONS
+
+  def build(self):
+
+    print "on verra plus tard pour améliorer le dico des mots clefs avec la base d'apprentissage"
+
+    
+  ##################################################################################
+    ## CATEGORY COMPUTING FUNCTIONS
+
+  def compute_category(self,item):
+    #Core function, associating an item with a category
+    #item is a vector just read from the file
+    #if self.train:      
+    #else:
+
+    desc_position = DESCRIPTION_POSITION_TEST
+    d = item[desc_position]
+    d = d.split()
+    d = [x in d if x in self.l] 
+
+    m=0
+    for a in self.dico.keys():
+      inter={c in d if c in self.dico[a]
+      if max<len(inter):
+        max=len(inter)
+        cat=a
+
+     return cat   
+
  
