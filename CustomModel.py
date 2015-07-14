@@ -5,7 +5,7 @@ from IModel   import *
 from Globals  import *
 from parser   import parser
 from tools    import smart_in
-from dico     import dico_mots_clefs
+from dico     import *
 
 
 csv.field_size_limit(sys.maxsize)
@@ -190,8 +190,8 @@ class PriceAverage(Model):
     else:
       price_position = PRICE_POSITION_TEST
     price = float(item[price_position])
-  #  if price <= 0:
-  #    cat = 1000015309
+    if price <= 0:
+      cat = 1000015309
     else:
       price = self.transform(price) 
       if price not in self.p_list:
@@ -220,15 +220,15 @@ class DescripAverage(Model):
     Model.__init__(self,**kwargs)
     self.name = "DESCIP_AVERAGE"
     self.output_name = RESULT_PATH + self.name + ".csv"
-    self.dico = dico_mots_clefs(self)
-    self.l = list_mots_clefs(self)
+    self.dico = dico_mots_clefs()
+    self.l = list_mots_clefs()
     
   ##################################################################################
   ## BUILDING FUNCTIONS
 
   def build(self):
 
-    print "on verra plus tard pour améliorer le dico des mots clefs avec la base d'apprentissage"
+    print "on verra plus tard pour ameliorer le dico des mots clefs avec la base d'apprentissage"
 
     
   ##################################################################################
@@ -243,15 +243,15 @@ class DescripAverage(Model):
     desc_position = DESCRIPTION_POSITION_TEST
     d = item[desc_position]
     d = d.split()
-    d = [x in d if x in self.l] 
+    d = [x for x in d if x in self.l] 
 
     m=0
     for a in self.dico.keys():
-      inter={c in d if c in self.dico[a]
-      if max<len(inter):
-        max=len(inter)
+      inter=[c for c in d if c in self.dico[a]]
+      if m<len(inter):
+        m=len(inter)
         cat=a
 
-     return cat   
+    return cat   
 
  

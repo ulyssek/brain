@@ -5,7 +5,7 @@ from IModel   import *
 from Globals  import *
 from parser   import parser
 from tools    import smart_in
-def dico_mots_cles():
+def dico_mots_clefs():
   spam_reader = parser("../data/rayon.csv")
   spam_reader.next()
 
@@ -28,7 +28,7 @@ def dico_mots_cles():
 
   return dictionnaire
 
-def list_mots_cles():
+def list_mots_clefs():
   d=dico_mots_clefs()
   l=[]
   for i in d.values():
