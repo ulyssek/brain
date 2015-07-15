@@ -148,8 +148,8 @@ class PriceAverage(Model):
         continue
       price = self.transform(float(row[self.price_position]))
       l.append(price)
-      if price in prices.keys():
-        if row[self.id_position] in prices[price].keys():
+      if smart_in(prices,price):
+        if smart_in(prices[price],row[self.id_position]):
           prices[price][row[self.id_position]] += 1
         else:
           prices[price][row[self.id_position]] = 1
@@ -161,7 +161,10 @@ class PriceAverage(Model):
         break
         
     self.prices = prices
+    print prices
     self.p_list = l
+    self.build_max_prices()
+    print self.build_max_prices()
 
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
@@ -197,22 +200,33 @@ class PriceAverage(Model):
     if price <= 0:
       cat = 1000015309
     else:
-      price = self.transform(price) 
-      if price not in self.p_list:
-        self.p_list.append(price)
-        if price-self.p_list[self.p_list.index(price)-1]<self.p_list[self.p_list.index(price)+1]-price:
-          price=self.p_list[self.p_list.index(price)-1]
+      price = self.transform(price)
+      p_list=self.p_list 
+      if price not in p_list:
+        p_list.append(price)
+        p_list.sort()
+        if p_list.index(price)==len(p_list)-1:
+          price=p_list[len(p_list)-2]
+        elif p_list.index(price)==0:
+          price=p_list[1]
         else:
-          price=self.p_list[self.p_list.index(price)+1]
+          if price-p_list[p_list.index(price)-1]<p_list[p_list.index(price)+1]-price:
+            price=p_list[p_list.index(price)-1]
+          else:
+            price=p_list[p_list.index(price)+1]
       cat = self.cat_from_price(price)
-      return cat
+    return cat
 
+  def build_max_prices(self):
+    self.max_price = {}
+    for price in self.prices.keys():
+      price_dict = self.prices[price]
+      self.max_price[price] = max(price_dict.keys(),key=lambda x : price_dict[x])
 
 
   def cat_from_price(self,price):
-    price_dict = self.prices[price]
-    return max(price_dict.keys(),key=lambda x : price_dict[x])
-
+    return self.max_price[price]
+    
 
 class DescripAverage(Model):
 
