@@ -18,7 +18,7 @@ csv.field_size_limit(sys.maxsize)
 
 spam_reader = parser(file_name)
 count = 0
-limit = 1000000000000u	
+limit = 100000000000
 brand_position = 3
 ratio = 0
 

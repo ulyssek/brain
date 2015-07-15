@@ -29,16 +29,17 @@ class BrandAverage(Model):
   ##################################################################################
   ## BUILDING FUNCTIONS
 
-  def build(self):
-    path = TRAIN_FILE
-    train_len = TRAIN_LEN
-    brand_position = BRAND_POSITION
-    id_position = C3_ID_POSITION
-    no_brand = NO_BRAND
+  def build(self,skip_cdiscount=False):
+    path                = TRAIN_FILE
+    train_len           = TRAIN_LEN
+    brand_position      = BRAND_POSITION
+    id_position         = C3_ID_POSITION
+    no_brand            = NO_BRAND
+    cdiscount_position  = CDISCOUNT_POSITION
 
-    count = 0
-    brands = {}
-    limit = None
+    count   = 0
+    brands  = {}
+    limit   = None
 
     if limit is not None:
       train_len = min(TRAIN_LEN,limit)
@@ -49,11 +50,14 @@ class BrandAverage(Model):
 
     print "computing brands dictionary"
 
+    spam_reader.next()
     for row in spam_reader:
       brand = row[brand_position]
       if brand == '':
         brand = no_brand
      
+      if skip_cdiscount and not(int(row[cdiscount_position])):
+        continue
       if smart_in(brands,brand):
         if smart_in(brands[brand],row[id_position]):
           brands[brand][row[id_position]] += 1
@@ -106,7 +110,6 @@ class BrandAverage(Model):
 
 
 
-
 class PriceAverage(Model):
 
   ##################################################################################
@@ -131,7 +134,7 @@ class PriceAverage(Model):
   ##################################################################################
   ## BUILDING FUNCTIONS
 
-  def build(self):
+  def build(self,skip_cdiscount):
     prices={}
     l=[]
     spam_reader = parser(self.path)
@@ -180,7 +183,7 @@ class PriceAverage(Model):
 
 
 
-##################################################################################
+  ##################################################################################
     ## CATEGORY COMPUTING FUNCTIONS
 
   def compute_category(self,item):
