@@ -14,7 +14,7 @@ class Model:
 
     print "Model initialized !"
 
-  def build(self):
+  def build(self,skip_cdiscount):
     raise Exception("Not Implemented yet")
 
     ##################################################################################
