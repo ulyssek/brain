@@ -162,7 +162,8 @@ class PriceAverage(Model):
 
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
-    inf=int(math.log(p)/self.pas)*self.pas
+  #  inf=int(math.log(p)/self.pas)*self.pas
+    inf = int(p/self.pas)*self.pas
     return inf
 
 
