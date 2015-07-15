@@ -22,19 +22,21 @@ class Model:
   def compute_category(self,item):
     raise Exception("Not Implemented yet")
  
-  def compute_output(self):
+  def compute_output(self,skip_cdiscount=False):
     result = [["Id_Produit","Id_Categorie"]]
     id_position = ID_POSITION
     if self.train:
-      file_name       = VALIDATION_FILE
-      brand_position  = BRAND_POSITION
-      file_len        = TRAIN_LEN
-      validation_len  = VALIDATION_LEN
-      cat_position    = C3_ID_POSITION
+      file_name           = VALIDATION_FILE
+      brand_position      = BRAND_POSITION
+      file_len            = TRAIN_LEN
+      validation_len      = VALIDATION_LEN
+      cat_position        = C3_ID_POSITION
+      cdiscount_position  = CDISCOUNT_POSITION
     else:
-      file_name       = TEST_FILE
-      brand_position  = BRAND_POSITION_TEST
-      file_len        = TEST_LEN
+      file_name           = TEST_FILE
+      brand_position      = BRAND_POSITION_TEST
+      file_len            = TEST_LEN
+      cdiscount_position  = 1
 
     spam_reader = parser(file_name)
     count = 0
@@ -52,10 +54,12 @@ class Model:
     for item in spam_reader:
       cat = self.compute_category(item)
       if self.train:
+        if skip_cdiscount and bool(int(item[cdiscount_position])):
+          continue
         real_cat = item[cat_position]
         score += int(real_cat == cat)
       else:  
-        result.append([item[ID_POSITION]])
+        result.append([item[ID_POSITION],cat])
       count += 1
       if not(int(count) % int(file_len/10)):
         print "%s%% done" % (100*count/float(file_len),)
@@ -82,9 +86,9 @@ class Model:
   ##################################################################################
   ## RUNNING FUNCTIONS
 
-  def run(self):
-    self.build()
-    self.compute_output()
+  def run(self,skip_cdiscount=False):
+    self.build(skip_cdiscount)
+    self.compute_output(skip_cdiscount)
     if not self.train:
       self.print_output()
 
