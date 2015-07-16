@@ -29,34 +29,27 @@ class BrandAverage(Model):
   ##################################################################################
   ## BUILDING FUNCTIONS
 
-  def build(self,skip_cdiscount=False):
+  def build(self):
     path                = TRAIN_FILE
     train_len           = TRAIN_LEN
     brand_position      = BRAND_POSITION
     id_position         = C3_ID_POSITION
-    no_brand            = NO_BRAND
     cdiscount_position  = CDISCOUNT_POSITION
+    self.no_brand       = NO_BRAND
 
-    count   = 0
     brands  = {}
-    limit   = None
-
-    if limit is not None:
-      train_len = min(TRAIN_LEN,limit)
-    else:
-      train_len = TRAIN_LEN
 
     spam_reader = parser(path)
 
     print "computing brands dictionary"
 
+    self.reset_count(train_len)
+
     spam_reader.next()
     for row in spam_reader:
-      brand = row[brand_position]
-      if brand == '':
-        brand = no_brand
+      brand = self.normalized_brand(row[brand_position])
      
-      if skip_cdiscount and not(int(row[cdiscount_position])):
+      if self.skip_cdiscount and not(int(row[cdiscount_position])):
         continue
       if smart_in(brands,brand):
         if smart_in(brands[brand],row[id_position]):
@@ -65,16 +58,20 @@ class BrandAverage(Model):
           brands[brand][row[id_position]] = 1
       else:
         brands[brand] = {row[id_position] : 1}
-      count += 1
-      if limit is not None and count == limit:
+
+      self.smart_count()
+      if self.loop_break:
         break
-      if not(int(count) % int(train_len/10)):
-        print "%s%% done" % (100*count/float(train_len),)
-    print "100% done"
 
     self.brands = brands
     self.build_max_brands()
     
+
+  def normalized_brand(self,brand):
+    if brand == '':
+      return self.no_brand
+    else:
+      return brand
 
   def build_max_brands(self):
     self.max_brand = {}
