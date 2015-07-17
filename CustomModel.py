@@ -131,13 +131,14 @@ class PriceAverage(Model):
   ##################################################################################
   ## BUILDING FUNCTIONS
 
-  def build(self,skip_cdiscount):
+  def build(self,skip_cdiscount=False):
     prices={}
     l=[]
     spam_reader = parser(self.path)
     spam_reader.next()
-    count=0
-
+    train_len = TRAIN_LEN
+    self.reset_count(train_len)
+    
     print "computing prices dictionary and prices list"
 
     for row in spam_reader:
@@ -152,11 +153,11 @@ class PriceAverage(Model):
           prices[price][row[self.id_position]] = 1
       else:
         prices[price] = {row[self.id_position] : 1}
-      count += 1
-      if count == self.train_len:
-      sort(l)
+      self.smart_count()
+      if self.loop_break:
         break
-        
+
+    l.sort() 
     self.prices = prices
     self.p_list = l
     self.build_max_prices()
@@ -195,23 +196,24 @@ class PriceAverage(Model):
       price_position = PRICE_POSITION_TEST
     price = float(item[price_position])
     if price <= 0:
-      cat = 1000015309
+      cat = '1000015309'
     else:
       price = self.transform(price)
-      p_list=list(self.p_list) 
-      if price not in p_list:
-        p_list.append(price)
-        p_list.sort()
-        if p_list.index(price)==len(p_list)-1:
-          price=p_list[len(p_list)-2]
-        elif p_list.index(price)==0:
-          price=p_list[1]
-        else:
-          if price-p_list[p_list.index(price)-1]<p_list[p_list.index(price)+1]-price:
-            price=p_list[p_list.index(price)-1]
-          else:
-            price=p_list[p_list.index(price)+1]
-      cat = self.cat_from_price(price)
+      p = None 
+      if price < self.p_list[0]:
+        price = self.p_list[0]
+      else:
+        for k in range(len(self.p_list)):
+          if price>k: 
+            continue
+          else :
+            if price-self.p_list[k-1]<self.p_list[k]-price:
+              p=self.p_list[k-1]
+            else:
+              p=self.p_list[k]
+      qif p==None:
+        p=self.p_list[len(self.p_list)-1]
+      cat = self.cat_from_price(p)
     return cat
 
   def build_max_prices(self):
