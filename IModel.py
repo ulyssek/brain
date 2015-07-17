@@ -10,7 +10,7 @@ class Model:
   
   def __init__(self,limit=None,talkative=True,skip_cdiscount=False,**kwargs):
     self.skip_cdiscount = skip_cdiscount
-    self.limit          = limit
+    self.limit          = 100000
     self.talkative      = talkative
     for key in kwargs.keys():
       setattr(self, key, kwargs[key])
