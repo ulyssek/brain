@@ -10,7 +10,7 @@ def f(n):
 
 
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 def up(dico,key):

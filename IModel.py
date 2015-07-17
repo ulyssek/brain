@@ -8,7 +8,10 @@ from parser import *
 
 class Model:
   
-  def __init__(self,**kwargs):
+  def __init__(self,limit=None,talkative=True,skip_cdiscount=False,**kwargs):
+    self.skip_cdiscount = skip_cdiscount
+    self.limit          = limit
+    self.talkative      = talkative
     for key in kwargs.keys():
       setattr(self, key, kwargs[key])
 
@@ -17,12 +20,33 @@ class Model:
   def build(self,skip_cdiscount):
     raise Exception("Not Implemented yet")
 
-    ##################################################################################
-    ## CATEGORY COMPUTING FUNCTIONS
+  ##################################################################################
+  ## COUNTING FUNCTIONS
+
+  def reset_count(self,count_len):
+    self.count = 0
+    self.loop_break = False
+    if self.limit is not None:
+      self.local_limit = min(count_len,self.limit)
+    else:
+      self.local_limit = count_len
+    
+  def smart_count(self):
+    self.count += 1
+    if self.limit is not None and self.count == self.limit:
+      self.loop_break = True
+      if self.talkative:
+        print "100% done"
+    elif not(self.count % int(self.local_limit/10)) and self.talkative:
+      print "%s%% done" % (100*self.count/float(self.local_limit),)
+
+  ##################################################################################
+  ## CATEGORY COMPUTING FUNCTIONS
+
   def compute_category(self,item):
     raise Exception("Not Implemented yet")
  
-  def compute_output(self,skip_cdiscount=False):
+  def compute_output(self):
     result = [["Id_Produit","Id_Categorie"]]
     id_position = ID_POSITION
     if self.train:
@@ -39,33 +63,26 @@ class Model:
       cdiscount_position  = 1
 
     spam_reader = parser(file_name)
-    count = 0
     score = 0
-    limit = None
 
-    if limit is not None:
-      file_len = min(file_len,limit)
-    else:
-      file_len = file_len
-
+    self.reset_count(file_len)
 
     print "computing output"
     next(spam_reader)
     for item in spam_reader:
       cat = self.compute_category(item)
       if self.train:
-        if skip_cdiscount and bool(int(item[cdiscount_position])):
+        if self.skip_cdiscount and bool(int(item[cdiscount_position])):
           continue
         real_cat = item[cat_position]
         score += int(real_cat == cat)
       else:  
         result.append([item[ID_POSITION],cat])
-      count += 1
-      if not(int(count) % int(file_len/10)):
-        print "%s%% done" % (100*count/float(file_len),)
-      if (limit is not None) & (count == limit):
+
+      self.smart_count()
+      if self.loop_break:
         break
-    print "100% done"
+
     if self.train:
       self.score = score/float(validation_len)*100
       print "score : %s " % (self.score,)
@@ -86,9 +103,9 @@ class Model:
   ##################################################################################
   ## RUNNING FUNCTIONS
 
-  def run(self,skip_cdiscount=False):
-    self.build(skip_cdiscount)
-    self.compute_output(skip_cdiscount)
+  def run(self):
+    self.build()
+    self.compute_output()
     if not self.train:
       self.print_output()
 
