@@ -157,15 +157,15 @@ class PriceAverage(Model):
         prices[price] = {row[self.id_position] : 1}
       count += 1
       if count == self.train_len:
-        sort(l)
+      sort(l)
         break
         
     self.prices = prices
-    print prices
     self.p_list = l
     self.build_max_prices()
-    print self.build_max_prices()
-
+    print self.max_price
+    print l[len(l)-1]
+    
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
   #  inf=int(math.log(p)/self.pas)*self.pas
@@ -201,7 +201,7 @@ class PriceAverage(Model):
       cat = 1000015309
     else:
       price = self.transform(price)
-      p_list=self.p_list 
+      p_list=list(self.p_list) 
       if price not in p_list:
         p_list.append(price)
         p_list.sort()
