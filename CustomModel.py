@@ -113,7 +113,7 @@ class PriceAverage(Model):
   ##################################################################################
    ## INIT FUNCTIONS
 
-  def __init__(self,train=False,limit = None,**kwargs):
+  def __init__(self,train=False,**kwargs):
     self.train = train
     self.score = 0
     Model.__init__(self,**kwargs)
@@ -124,8 +124,6 @@ class PriceAverage(Model):
     self.price_position = PRICE_POSITION
     self.id_position = C3_ID_POSITION
     self.prix_max = 0
-    if limit is not None:
-      self.train_len = min(TRAIN_LEN,limit)
     self.pas = 0.5
 
 
@@ -162,8 +160,8 @@ class PriceAverage(Model):
     self.prices = prices
     self.p_list = l
     self.build_max_prices()
-    print self.max_price
-    print l[len(l)-1]
+    #print self.max_price
+    #print l[len(l)-1]
     
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
@@ -204,15 +202,14 @@ class PriceAverage(Model):
       if price < self.p_list[0]:
         price = self.p_list[0]
       else:
-        for k in range(len(self.p_list)):
-          if price>k: 
-            continue
-          else :
-            if price-self.p_list[k-1]<self.p_list[k]-price:
+        for k in xrange(len(self.p_list)):
+          if price<=self.p_list[k]: 
+            if (price-self.p_list[k-1])<(self.p_list[k]-price):
               p=self.p_list[k-1]
             else:
               p=self.p_list[k]
-      qif p==None:
+            break 
+      if p==None:
         p=self.p_list[len(self.p_list)-1]
       cat = self.cat_from_price(p)
     return cat

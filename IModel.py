@@ -10,7 +10,7 @@ class Model:
   
   def __init__(self,limit=None,talkative=True,skip_cdiscount=False,**kwargs):
     self.skip_cdiscount = skip_cdiscount
-    self.limit          = 100000
+    self.limit          = limit
     self.talkative      = talkative
     for key in kwargs.keys():
       setattr(self, key, kwargs[key])
@@ -30,6 +30,8 @@ class Model:
       self.local_limit = min(count_len,self.limit)
     else:
       self.local_limit = count_len
+    print self.local_limit
+    print self.limit
     
   def smart_count(self):
     self.count += 1
