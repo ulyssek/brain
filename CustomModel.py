@@ -6,6 +6,7 @@ from Globals  import *
 from parser   import parser
 from tools    import smart_in
 from dico     import *
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 csv.field_size_limit(sys.maxsize)
@@ -270,3 +271,51 @@ class DescripAverage(Model):
     return cat   
 
  
+
+class TfIdfModel(Model):
+
+  def build(self):
+    path                = TRAIN_FILE
+    train_len           = TRAIN_LEN
+    text_position       = DESCRIPTION_POSITION
+    id_position         = C3_ID_POSITION
+    cdiscount_position  = CDISCOUNT_POSITION
+
+
+    spam_reader = parser(path)
+
+    data = {}
+
+    print "computing brands dictionary"
+
+    self.reset_count(train_len)
+
+    spam_reader.next()
+    for row in spam_reader:
+      desc = row[text_position]
+
+      if self.skip_cdiscount and not(int(row[cdiscount_position])):
+        continue
+      if smart_in(data,row[id_position]):
+        data[row[id_position]].append(desc)
+      else:
+        data[row[id_position]] = [desc]
+
+      self.smart_count()
+      if self.loop_break:
+        break
+
+    final_data = {}
+
+    for cat_id in data.keys():
+      final_text = ''
+      for text in data[cat_id]:
+        final_text += text
+      final_data[cat_id] = final_text
+
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit_transform(map(lambda x : final_data[x], final_data.keys()))
+    return vectorizer
+
+
+
