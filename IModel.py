@@ -30,8 +30,6 @@ class Model:
       self.local_limit = min(count_len,self.limit)
     else:
       self.local_limit = count_len
-    print self.local_limit
-    print self.limit
     
   def smart_count(self):
     self.count += 1

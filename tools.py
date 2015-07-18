@@ -1,3 +1,5 @@
+from time import sleep
+
 def f(n):
   results = []
   for i in xrange(6):
@@ -84,3 +86,30 @@ def smart_in(dico,key):
   except KeyError:
     return False
     
+def find_nearest(liste, element):
+  #CAREFUL, THE LIST MUST BE SORTED
+
+  if element <= liste[0]:
+    return liste[0]
+  elif element >= liste[len(liste)-1]:
+    return liste[len(liste)-1]
+  current_i = len(liste)/2
+  step = len(liste)/2
+  while True:
+    if liste[current_i] == element:
+      return liste[current_i]
+    elif step == 1:
+      m1 = (current_i-1,abs(liste[current_i-1]-element))
+      m2 = (current_i,abs(liste[current_i]-element))
+      try:
+        m3 = (current_i+1,abs(liste[current_i+1]-element))
+      except IndexError:
+        m3 = m2
+      return liste[min([m1,m2,m3],key=lambda x : x[1])[0]]
+        
+    step = step/2
+    if liste[current_i] < element:
+      current_i += step
+    else:
+      current_i -= step
+

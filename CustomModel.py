@@ -4,7 +4,7 @@ import math
 from IModel   import *
 from Globals  import *
 from parser   import parser
-from tools    import smart_in
+from tools    import smart_in, find_nearest
 from dico     import *
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -199,6 +199,8 @@ class PriceAverage(Model):
     else:
       price = self.transform(price)
       p = None 
+      p = find_nearest(self.p_list,price)
+      """
       if price < self.p_list[0]:
         price = self.p_list[0]
       else:
@@ -211,6 +213,7 @@ class PriceAverage(Model):
             break 
       if p==None:
         p=self.p_list[len(self.p_list)-1]
+      """
       cat = self.cat_from_price(p)
     return cat
 
