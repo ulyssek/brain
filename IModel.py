@@ -8,10 +8,23 @@ from parser import *
 
 class Model:
   
-  def __init__(self,limit=None,talkative=True,skip_cdiscount=False,**kwargs):
+  def __init__(self,
+                  limit=None,
+                  talkative=True,
+                  skip_cdiscount=False,
+                  batch=False,
+                  train=False,
+                  **kwargs):
     self.skip_cdiscount = skip_cdiscount
     self.limit          = limit
     self.talkative      = talkative
+    self.batch          = batch
+    self.train          = train
+    self.score          = 0
+    self.path           = TRAIN_FILE
+    self.train_len      = TRAIN_LEN
+    self.cdiscount_position = CDISCOUNT_POSITION
+    self.output_name = RESULT_PATH + self.name + ".csv"
     for key in kwargs.keys():
       setattr(self, key, kwargs[key])
 
@@ -52,6 +65,7 @@ class Model:
     if self.train:
       file_name           = VALIDATION_FILE
       brand_position      = BRAND_POSITION
+      price_positin       = PRICE_POSITION
       file_len            = TRAIN_LEN
       validation_len      = VALIDATION_LEN
       cat_position        = C3_ID_POSITION
@@ -69,25 +83,55 @@ class Model:
 
     print "computing output"
     next(spam_reader)
-    for item in spam_reader:
-      cat = self.compute_category(item)
-      if self.train:
-        if self.skip_cdiscount and bool(int(item[cdiscount_position])):
-          continue
-        real_cat = item[cat_position]
-        score += int(real_cat == cat)
-      else:  
-        result.append([item[ID_POSITION],cat])
 
-      self.smart_count()
-      if self.loop_break:
-        break
+    if not self.batch:
+      for item in spam_reader:
+        cat = self.compute_category(item)
+        if self.train:
+          if self.skip_cdiscount_function(item):
+            continue
+          real_cat = item[cat_position]
+          score += int(real_cat == cat)
+        else:  
+          result.append([item[ID_POSITION],cat])
+
+        self.smart_count()
+        if self.loop_break:
+          break
+    else:
+      print "batch"
+      items = []
+      real_cats = []
+      for item in spam_reader:
+        self.smart_count()
+        it = self.pre_build_item(item)
+        cat = item[cat_position]
+        if self.train:
+          if self.skip_cdiscount_function(item):
+            continue
+          real_cats.append(cat)
+          items.append((it,cat))
+        else:
+          items.append(it)
+        if self.loop_break:
+          break
+      prediction = self.compute_batch_category(items)
+      print "prediction done, computing score"
+      for i in xrange(len(items)):
+        score += int(str(prediction[i]) == str(items[i][1]))
+      print score
+          
+
+
 
     if self.train:
       self.score = score/float(validation_len)*100
       print "score : %s " % (self.score,)
     else:
       self.result = result
+
+  def skip_cdiscount_function(self, item):
+    return self.skip_cdiscount and not bool(int(item[self.cdiscount_position]))
 
   ##################################################################################
   ## PRINTING FUNCTIONS

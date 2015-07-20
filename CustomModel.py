@@ -1,12 +1,14 @@
 import csv
 import sys
 import math
+import gc
 from IModel   import *
 from Globals  import *
 from parser   import parser
 from tools    import smart_in, find_nearest
 from dico     import *
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier as nei_classifier
 
 
 csv.field_size_limit(sys.maxsize)
@@ -20,19 +22,14 @@ class BrandAverage(Model):
   ##################################################################################
   ## INIT FUNCTIONS
 
-  def __init__(self,train=False,**kwargs):
-    self.train = train
-    self.score = 0
-    Model.__init__(self,**kwargs)
+  def __init__(self,**kwargs):
     self.name = "BRAND_AVERAGE"
-    self.output_name = RESULT_PATH + self.name + ".csv"
+    Model.__init__(self,**kwargs)
 
   ##################################################################################
   ## BUILDING FUNCTIONS
 
   def build(self):
-    path                = TRAIN_FILE
-    train_len           = TRAIN_LEN
     brand_position      = BRAND_POSITION
     id_position         = C3_ID_POSITION
     cdiscount_position  = CDISCOUNT_POSITION
@@ -40,11 +37,11 @@ class BrandAverage(Model):
 
     brands  = {}
 
-    spam_reader = parser(path)
+    spam_reader = parser(self.path)
 
     print "computing brands dictionary"
 
-    self.reset_count(train_len)
+    self.reset_count(self.train_len)
 
     spam_reader.next()
     for row in spam_reader:
@@ -113,14 +110,9 @@ class PriceAverage(Model):
   ##################################################################################
    ## INIT FUNCTIONS
 
-  def __init__(self,train=False,**kwargs):
-    self.train = train
-    self.score = 0
-    Model.__init__(self,**kwargs)
+  def __init__(self,**kwargs):
     self.name = "PRICE_AVERAGE"
-    self.output_name = RESULT_PATH + self.name + ".csv"
-    self.path = TRAIN_FILE
-    self.train_len = TRAIN_LEN
+    Model.__init__(self,**kwargs)
     self.price_position = PRICE_POSITION
     self.id_position = C3_ID_POSITION
     self.prix_max = 0
@@ -135,8 +127,7 @@ class PriceAverage(Model):
     l=[]
     spam_reader = parser(self.path)
     spam_reader.next()
-    train_len = TRAIN_LEN
-    self.reset_count(train_len)
+    self.reset_count(self.train_len)
     
     print "computing prices dictionary and prices list"
 
@@ -166,6 +157,7 @@ class PriceAverage(Model):
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
   #  inf=int(math.log(p)/self.pas)*self.pas
+    return p
     inf = int(p/self.pas)*self.pas
     return inf
 
@@ -200,20 +192,6 @@ class PriceAverage(Model):
       price = self.transform(price)
       p = None 
       p = find_nearest(self.p_list,price)
-      """
-      if price < self.p_list[0]:
-        price = self.p_list[0]
-      else:
-        for k in xrange(len(self.p_list)):
-          if price<=self.p_list[k]: 
-            if (price-self.p_list[k-1])<(self.p_list[k]-price):
-              p=self.p_list[k-1]
-            else:
-              p=self.p_list[k]
-            break 
-      if p==None:
-        p=self.p_list[len(self.p_list)-1]
-      """
       cat = self.cat_from_price(p)
     return cat
 
@@ -234,10 +212,8 @@ class DescripAverage(Model):
    ## INIT FUNCTIONS
 
   def __init__(self,train=False,limit = None,**kwargs):
-    self.score = 0
-    Model.__init__(self,**kwargs)
     self.name = "DESCIP_AVERAGE"
-    self.output_name = RESULT_PATH + self.name + ".csv"
+    Model.__init__(self,**kwargs)
     self.dico = dico_mots_clefs()
     self.l = list_mots_clefs()
     
@@ -277,20 +253,18 @@ class DescripAverage(Model):
 class TfIdfModel(Model):
 
   def build(self):
-    path                = TRAIN_FILE
-    train_len           = TRAIN_LEN
     text_position       = DESCRIPTION_POSITION
     id_position         = C3_ID_POSITION
     cdiscount_position  = CDISCOUNT_POSITION
 
 
-    spam_reader = parser(path)
+    spam_reader = parser(self.path)
 
     data = {}
 
     print "computing brands dictionary"
 
-    self.reset_count(train_len)
+    self.reset_count(self.train_len)
 
     spam_reader.next()
     for row in spam_reader:
@@ -321,3 +295,83 @@ class TfIdfModel(Model):
 
 
 
+class PriceNeighbors(Model):
+ 
+  def __init__(self,neighbors_number=10,price=True,brand=True,**kwargs):
+    self.name = "PRICE_AVERAGE"
+    Model.__init__(self,**kwargs)
+    self.price_position   = PRICE_POSITION
+    self.brand_position   = BRAND_POSITION
+    self.id_position      = C3_ID_POSITION
+    self.neighbors_number = neighbors_number
+    self.price            = price
+    self.brand            = brand
+
+
+
+  def extract_from_item(self,item):
+    result = {}
+    if self.price:
+      result["price"] = float(item[self.price_position])
+    if self.brand:
+      result["brand"] = float(item[self.brand_position])
+    return result
+ 
+  def build(self,skip_cdiscount=False):
+    prices=[]
+    spam_reader = parser(self.path)
+    spam_reader.next()
+
+    self.reset_count(self.train_len)
+    
+    print "computing prices dictionary and prices list"
+
+    for row in spam_reader:
+      price = float(row[self.price_position])
+      self.smart_count()
+      if price < 0:
+        continue
+      cat   = row[self.id_position]
+      prices.append((price,cat))
+      if self.loop_break:
+        break
+
+    self.prices = prices
+    self.build_classifier()
+
+  def build_classifier(self):
+    self.classifier = nei_classifier(n_neighbors=self.neighbors_number)
+    X = map(lambda (x1,x2) : [x1], self.prices)
+    y = map(lambda (x1, x2) : x2, self.prices)
+    del(self.prices)
+    self.classifier.fit(X,y)
+
+  def compute_category(self,item):
+    #Core function, associating an item with a category
+    #item is a vector just read from the file
+    if self.train:
+      price_position = PRICE_POSITION
+    else:
+      price_position = PRICE_POSITION_TEST
+    cat = self.cat_from_price(price)
+    return cat
+
+  def cat_from_price(self,price):
+    return self.classifier.predict([[price]])
+
+  def pre_build_item(self,item):
+    if self.train:
+      price_position = PRICE_POSITION
+    else:
+      price_position = PRICE_POSITION_TEST
+    return item[price_position]
+
+
+  def compute_batch_category(self,items):
+    X = map(lambda (x1,x2) : [x1], items)
+    del(items)
+    return self.classifier.predict(X)
+
+  
+
+ 
