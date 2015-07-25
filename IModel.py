@@ -1,5 +1,6 @@
 from Globals import * 
 from parser import *
+from timer import Timer
 
 
 
@@ -24,7 +25,22 @@ class Model:
     self.path           = TRAIN_FILE
     self.train_len      = TRAIN_LEN
     self.cdiscount_position = CDISCOUNT_POSITION
-    self.output_name = RESULT_PATH + self.name + ".csv"
+    self.output_name    = RESULT_PATH + self.name + ".csv"
+    self.no_brand       = NO_BRAND
+
+    self.id_position          = ID_POSITION
+    self.brand_position       = BRAND_POSITION
+    self.price_position       = PRICE_POSITION
+    self.c3_position          = C3_ID_POSITION
+    self.cdiscount_position   = CDISCOUNT_POSITION
+    self.desc_position        = DESCRIPTION_POSITION
+    self.libelle_position     = LIBELLE_POSITION
+    self.desc_position_test   = DESCRIPTION_POSITION_TEST
+    self.brand_position_test  = BRAND_POSITION_TEST
+    self.price_position_test  = PRICE_POSITION_TEST
+    self.libelle_position_test = LIBELLE_POSITION_TEST
+    self.counting_timer       = Timer()
+
     for key in kwargs.keys():
       setattr(self, key, kwargs[key])
 
@@ -43,15 +59,24 @@ class Model:
       self.local_limit = min(count_len,self.limit)
     else:
       self.local_limit = count_len
+    self.counting_timer.clean()
+    self.counting_timer.pick()
     
-  def smart_count(self):
+  def smart_count(self,so_far=False):
     self.count += 1
-    if self.limit is not None and self.count == self.limit:
+    try:
+      boule = not(self.count % int(self.local_limit/100)) and self.talkative 
+    except ZeroDivisionError:
+      boule = False
+    if self.limit is not None and self.count == self.local_limit:
       self.loop_break = True
       if self.talkative:
         print "100% done"
-    elif not(self.count % int(self.local_limit/10)) and self.talkative:
-      print "%s%% done" % (100*self.count/float(self.local_limit),)
+    elif boule: 
+      self.counting_timer.pick()
+      print "%s%% done (%s s)" % (int(100*self.count/float(self.local_limit)),self.counting_timer.last_dif())
+      if so_far:
+        print "score so far : %s " % (self.temp_score/float(self.count)*100)
 
   ##################################################################################
   ## CATEGORY COMPUTING FUNCTIONS
@@ -77,7 +102,7 @@ class Model:
       cdiscount_position  = 1
 
     spam_reader = parser(file_name)
-    score = 0
+    self.temp_score = 0
 
     self.reset_count(file_len)
 
@@ -86,16 +111,16 @@ class Model:
 
     if not self.batch:
       for item in spam_reader:
+        self.smart_count(so_far=True)
         cat = self.compute_category(item)
         if self.train:
           if self.skip_cdiscount_function(item):
             continue
           real_cat = item[cat_position]
-          score += int(real_cat == cat)
+          self.temp_score += int(real_cat == cat)
         else:  
-          result.append([item[ID_POSITION],cat])
+          result.append([item[id_position],cat])
 
-        self.smart_count()
         if self.loop_break:
           break
     else:
@@ -118,14 +143,14 @@ class Model:
       prediction = self.compute_batch_category(items)
       print "prediction done, computing score"
       for i in xrange(len(items)):
-        score += int(str(prediction[i]) == str(items[i][1]))
-      print score
+        self.temp_score += int(str(prediction[i]) == str(items[i][1]))
+      print self.temp_score
           
 
 
 
     if self.train:
-      self.score = score/float(validation_len)*100
+      self.score = self.temp_score/float(validation_len)*100
       print "score : %s " % (self.score,)
     else:
       self.result = result
