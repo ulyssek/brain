@@ -383,8 +383,9 @@ class DescCentroid(Model):
   ##################################################################################
   ## INIT FUNCTIONS
 
-  def __init__(self,**kwargs):
+  def __init__(self,product=False,**kwargs):
     self.name = "DESC_CENTROID_IDF"
+    self.product = product
     Model.__init__(self,**kwargs)
 
   ##################################################################################
@@ -394,6 +395,7 @@ class DescCentroid(Model):
 
     self.word_cats_dict = {}
     cats  = {} 
+    cat_count = {}
 
     spam_reader = parser(self.path)
 
@@ -403,13 +405,26 @@ class DescCentroid(Model):
 
     spam_reader.next()
     for row in spam_reader:
-      self.smart_count()
-      cat   = row[self.c3_position]
 
-      voc = self.voc_from_item(row,train=True)
-     
+      cat   = row[self.c3_position]
+      self.smart_count()
+
       if self.skip_cdiscount_function(row):
         continue
+      if self.skip_book_function(row):
+        continue
+      if self.cat_count is not None:
+        if not smart_in(cat_count,cat):
+          cat_count[cat] = 1
+        else:
+          if cat_count[cat] > self.cat_count:
+            continue
+          else:
+            cat_count[cat] += 1
+
+
+
+      voc = self.voc_from_item(row,train=True)
 
       for word in voc:
         if smart_in(self.word_cats_dict,word):
@@ -422,6 +437,11 @@ class DescCentroid(Model):
         else:
           cats[cat] = WordDic()
           cats[cat].add_word(word)
+
+      del(voc)
+
+      print "size of cats : %s "% (sys.getsizeof(cats),)
+      print "size of word_cats : %s " % (sys.getsizeof(self.word_cats_dict),)
 
       if self.loop_break:
         break
@@ -461,6 +481,10 @@ class DescCentroid(Model):
     voc = desc.split(" ")
     voc = self.remove_stop_words(voc)
     voc.append(brand)
+    if self.product:
+      for i in xrange(len(voc)):
+          for j in xrange(i):
+            voc.append(voc[i] + "_" + voc[j])
     return voc
 
 
@@ -500,7 +524,7 @@ class DescCentroid(Model):
       "a",
       "ce",
       "par",
-      #"sur",
+      "sur",
       "est",
       "pas",
       "très",
@@ -514,7 +538,7 @@ class DescCentroid(Model):
       "bleue",
       "bleu",
       "noire",
-      #"mm",
+      "mm",
       "cm",
       "dm",
       "m",
