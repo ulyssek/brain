@@ -514,7 +514,7 @@ class DescCentroid(Model):
       "bleue",
       "bleu",
       "noire",
-      "mm",
+      #"mm",
       "cm",
       "dm",
       "m",
