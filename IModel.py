@@ -13,10 +13,13 @@ class Model:
                   limit=None,
                   talkative=True,
                   skip_cdiscount=False,
+                  skip_book=False,
                   batch=False,
                   train=False,
+                  cat_count=None,
                   **kwargs):
     self.skip_cdiscount = skip_cdiscount
+    self.skip_book      = skip_book
     self.limit          = limit
     self.talkative      = talkative
     self.batch          = batch
@@ -27,6 +30,7 @@ class Model:
     self.cdiscount_position = CDISCOUNT_POSITION
     self.output_name    = RESULT_PATH + self.name + ".csv"
     self.no_brand       = NO_BRAND
+    self.cat_count      = cat_count
 
     self.id_position          = ID_POSITION
     self.brand_position       = BRAND_POSITION
@@ -158,6 +162,8 @@ class Model:
   def skip_cdiscount_function(self, item):
     return self.skip_cdiscount and not bool(int(item[self.cdiscount_position]))
 
+  def skip_book_function(self, item):
+    return self.skip_book and not (item[self.c3_position]=="1000015309")  
   ##################################################################################
   ## PRINTING FUNCTIONS
 
