@@ -65,7 +65,7 @@ class Model:
   def smart_count(self,so_far=False):
     self.count += 1
     try:
-      boule = not(self.count % int(self.local_limit/100)) and self.talkative 
+      boule = not(self.count % int(self.local_limit/10)) and self.talkative 
     except ZeroDivisionError:
       boule = False
     if self.limit is not None and self.count == self.local_limit:
