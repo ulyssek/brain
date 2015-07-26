@@ -394,6 +394,7 @@ class DescCentroid(Model):
 
     self.word_cats_dict = {}
     cats  = {} 
+    cat_count = {}
 
     spam_reader = parser(self.path)
 
@@ -500,7 +501,7 @@ class DescCentroid(Model):
       "a",
       "ce",
       "par",
-      #"sur",
+      "sur",
       "est",
       "pas",
       "très",
@@ -514,7 +515,7 @@ class DescCentroid(Model):
       "bleue",
       "bleu",
       "noire",
-      #"mm",
+      "mm",
       "cm",
       "dm",
       "m",
