@@ -54,7 +54,6 @@ class DescCentroid(Model):
     for row in spam_reader:
 
       cat   = row[self.c3_position]
-      self.smart_count()
 
       if self.skip_cdiscount_function(row):
         continue
@@ -69,6 +68,10 @@ class DescCentroid(Model):
           else:
             cat_count[cat] += 1
 
+      self.smart_count()
+
+      if self.loop_break:
+        break
 
 
       voc = self.voc_from_item(row,train=True)
@@ -79,6 +82,9 @@ class DescCentroid(Model):
             self.word_cats_dict[word].add(cat)
         else:
           self.word_cats_dict[word] = set([cat])
+      if self.product:
+        voc = self.word_product(voc)
+      for word in voc:
         if smart_in(cats,cat):
           cats[cat].add_word(word)
         else:
@@ -87,11 +93,7 @@ class DescCentroid(Model):
 
       del(voc)
 
-      print "size of cats : %s "% (sys.getsizeof(cats),)
-      print "size of word_cats : %s " % (sys.getsizeof(self.word_cats_dict),)
 
-      if self.loop_break:
-        break
 
     self.cats = cats
     self.build_centroids()
@@ -128,11 +130,14 @@ class DescCentroid(Model):
     voc = desc.split(" ")
     voc = self.remove_stop_words(voc)
     voc.append(brand)
-    if self.product:
-      for i in xrange(len(voc)):
-          for j in xrange(i):
-            voc.append(voc[i] + "_" + voc[j])
     return voc
+
+
+  def word_product(self,word_list):
+    for i in xrange(len(word_list)):
+      for j in xrange(i):
+        word_list.append(word_list[i] + "_" + word_list[j])
+    return word_list
 
 
      
@@ -159,9 +164,12 @@ class DescCentroid(Model):
       "au",
       "Le",
       "à",
+      "aux",
+      "ou",
       "et",
       "les",
       "des",
+      "du",
       "À",
       "…",
       "voir",
@@ -191,6 +199,7 @@ class DescCentroid(Model):
       "m",
       "d",
       "plus",
+      "AUCUNE",
     ]
     text[:] = [x for x in text if (x not in s_words and not x.isdigit())]
     return text
@@ -205,7 +214,15 @@ class DescCentroid(Model):
       word_count = float(self.cats[cat].total)
       for word in self.cats[cat].word_list():
         if idf:
-          idf_factor = len(self.word_cats_dict[word])
+          # word est soit de la forme %mot, auxquel cas il sera trouvé dans word_cats_dict, soit de 
+          # la forme mot1_mot2, auxquel cas il ne sera pas dans word_cats_dict, et sa valeur de idf 
+          # sera une formule de mot1 et mot2
+          # Le try permet de n'executer les splits que pour les mots composés
+          try:
+            idf_factor = len(self.word_cats_dict[word])
+          except KeyError:
+            word1, word2 = word.split("_")
+            idf_factor = max(len(self.word_cats_dict[word1]),len(self.word_cats_dict[word2]))
         else:
           idf_factor = 1
         self.centroids[cat][word] = self.cats[cat].dic[word]/(word_count*idf_factor)
@@ -214,18 +231,24 @@ class DescCentroid(Model):
     t = Timer()
     t.pick("debut")
     voc = self.voc_from_item(item)
+    if self.product:
+      voc = self.word_product(voc)
     voc_dic = self.word_dic_from_list(voc)
     best_score = 0
     best_cat = 1000009411
     t.pick("vocabulaire construit")
     cat_set = set()
+
     for word in voc_dic["dic"].keys():
       try:
         cat_set = cat_set.union(self.word_cats_dict[word])
         #print 'word : "%s", count : %s ' % (word,len(self.word_cats_dict[word]))
       except KeyError:
+        #Si on ne peut pas trouver de catégorie pour ce mot, c'est qu'il n'a jamais été trouvé 
+        # dans le set train
         pass
     #print "total : %s " % (len(cat_set) ,)
+    #print len(voc_dic["dic"])
     for cat in cat_set:
       score = 0
       for word in voc_dic["dic"].keys():

@@ -163,7 +163,8 @@ class Model:
     return self.skip_cdiscount and not bool(int(item[self.cdiscount_position]))
 
   def skip_book_function(self, item):
-    return self.skip_book and not (item[self.c3_position]=="1000015309")  
+    return self.skip_book and item[self.c3_position]=="1000015309"
+
   ##################################################################################
   ## PRINTING FUNCTIONS
 
