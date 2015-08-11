@@ -61,11 +61,16 @@ class BrandAverage(Model):
           brands[brand][row[self.c3_position]] += 1
         else:
           brands[brand][row[self.c3_position]] = 1
+        brands[brand]['total']+=1
       else:
-        brands[brand] = {row[self.c3_position] : 1}
+        brands[brand] = {row[self.c3_position] : 1,'total' : 1}
+        
 
+      
       if self.loop_break:
         break
+
+
 
     self.brands = brands
     self.build_max_brands()
@@ -79,9 +84,18 @@ class BrandAverage(Model):
 
   def build_max_brands(self):
     self.max_brand = {}
+    self.proba = {}
     for brand in self.brands.keys():
+
       brand_dict = self.brands[brand]
+      total=brand_dict.pop('total')
       self.max_brand[brand] = max(brand_dict.keys(),key=lambda x : brand_dict[x])
+      self.proba[brand] = float(brand_dict[self.max_brand[brand]])/float(total)
+      #if float(brand_dict[self.max_brand[brand]])!=float(total):
+      # print "proba plus petit que 1"
+      #print float(brand_dict[self.max_brand[brand]])
+      
+
       
 
 

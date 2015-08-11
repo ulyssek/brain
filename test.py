@@ -10,9 +10,11 @@
 from CustomModel import BrandAverage
 
 
-m = BrandAverage(train=True,limit=pow(10,5),talkative=True)
-m.run()
+m = BrandAverage(train=True,limit=pow(10,3),talkative=True)
 
+m.build()
+m.compute_output()
+m.build_max_brands()
 
 if m.score==0.0188557944754317974813147:
   print "It's Working ! "
