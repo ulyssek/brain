@@ -58,8 +58,9 @@ class PriceAverage(Model):
           prices[price][row[self.c3_position]] += 1
         else:
           prices[price][row[self.c3_position]] = 1
+        prices[price]['total']+=1
       else:
-        prices[price] = {row[self.c3_position] : 1}
+        prices[price] = {row[self.c3_position] : 1,'total' : 1}
       self.smart_count()
       if self.loop_break:
         break
@@ -68,6 +69,7 @@ class PriceAverage(Model):
     self.prices = prices
     self.p_list = l
     self.build_max_prices()
+    
     #print self.max_price
     #print l[len(l)-1]
     
@@ -114,9 +116,14 @@ class PriceAverage(Model):
 
   def build_max_prices(self):
     self.max_price = {}
+    self.proba = {}
     for price in self.prices.keys():
       price_dict = self.prices[price]
+      t=price_dict.pop('total')
+      self.proba[price]={'total':t}
       self.max_price[price] = max(price_dict.keys(),key=lambda x : price_dict[x])
+      self.proba[price]['proba']=float(price_dict[self.max_price[price]])/float(t)
+
 
 
   def cat_from_price(self,price):
