@@ -1,4 +1,5 @@
 from tools import smart_in
+from time import sleep
 
 
 
@@ -6,18 +7,29 @@ class WordDic():
 
 
   def __init__(self):
-      self.total    = 0
-      self.dic      = {}
-      self.product  = False
+    self.total    = 0
+    self.dic      = {}
+    self.product  = False
 
 
   def add_word(self,word,n=1):
-      if smart_in(self.dic,word):
-        self.dic[word] += n
-      else:
-        self.dic[word] = n
-      self.total += n
+    if smart_in(self.dic,word):
+      self.dic[word] += n
+    else:
+      self.dic[word] = n
+    self.total += n
 
+  def del_word(self,word,one=True,talkative=False):
+    try:
+      if not one or (self.dic[word] == 1):
+        self.dic.pop(word)
+        return True
+      return False
+    except KeyError:
+      if talkative:
+        print "Word not found while trying to del it"
+      return False
+    
   def word_list(self):
     return self.dic.keys()
 

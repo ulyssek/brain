@@ -79,9 +79,9 @@ class DescCentroid(Model):
       for word in voc:
         if smart_in(self.word_cats_dict,word):
           if cat not in self.word_cats_dict[word]:
-            self.word_cats_dict[word].add(cat)
+            self.word_cats_dict[word].append(cat)
         else:
-          self.word_cats_dict[word] = set([cat])
+          self.word_cats_dict[word] = [cat]
       if self.product:
         voc = self.word_product(voc)
       for word in voc:
@@ -93,8 +93,22 @@ class DescCentroid(Model):
 
       del(voc)
 
+    print len(self.word_cats_dict)
+    new_dict = {}
+    for word in self.word_cats_dict:
+      if not len(self.word_cats_dict[word])==1:
+        new_dict[word] = self.word_cats_dict[word]
+      else:
+        if cats[next(iter(self.word_cats_dict[word]))].del_word(word):
+          new_dict[word] = self.word_cats_dict[word]
+
+    self.word_cats_dict = new_dict
+
+    print len(self.word_cats_dict)
 
 
+    print "size of word_cats : %s " % (sys.getsizeof(new_dict)*sys.getsizeof(new_dict[next(iter(new_dict))]))
+    print "size of cats : %s " % (sys.getsizeof(cats)*sys.getsizeof(next(iter(cats))))
     self.cats = cats
     self.build_centroids()
 
@@ -221,8 +235,9 @@ class DescCentroid(Model):
           try:
             idf_factor = len(self.word_cats_dict[word])
           except KeyError:
-            word1, word2 = word.split("_")
-            idf_factor = max(len(self.word_cats_dict[word1]),len(self.word_cats_dict[word2]))
+            #word1, word2 = word.split("_")
+            #idf_factor = max(len(self.word_cats_dict[word1]),len(self.word_cats_dict[word2]))
+            idf_factor = 1
         else:
           idf_factor = 1
         self.centroids[cat][word] = self.cats[cat].dic[word]/(word_count*idf_factor)
