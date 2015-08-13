@@ -33,7 +33,7 @@ class PriceAverage(Model):
     self.name = "PRICE_AVERAGE"
     Model.__init__(self,**kwargs)
     self.prix_max = 0
-    self.pas = 0.5
+    self.pas = 10
 
 
   ##################################################################################
@@ -52,7 +52,6 @@ class PriceAverage(Model):
       if float(row[self.price_position])<=0:
         continue
       price = self.transform(float(row[self.price_position]))
-      l.append(price)
       if smart_in(prices,price):
         if smart_in(prices[price],row[self.c3_position]):
           prices[price][row[self.c3_position]] += 1
@@ -60,6 +59,7 @@ class PriceAverage(Model):
           prices[price][row[self.c3_position]] = 1
         prices[price]['total']+=1
       else:
+        l.append(price)
         prices[price] = {row[self.c3_position] : 1,'total' : 1}
       self.smart_count()
       if self.loop_break:
@@ -76,7 +76,7 @@ class PriceAverage(Model):
   ###A UN PRIX ASSOCIER LA BORNE INF DE L'INTERVALLE ECHELLE LOGARITHMIQUE
   def transform(self, p):
   #  inf=int(math.log(p)/self.pas)*self.pas
-    return p
+  #  return p
     inf = int(p/self.pas)*self.pas
     return inf
 

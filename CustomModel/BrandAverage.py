@@ -86,14 +86,11 @@ class BrandAverage(Model):
     self.max_brand = {}
     self.proba = {}
     for brand in self.brands.keys():
-
       brand_dict = self.brands[brand]
       total=brand_dict.pop('total')
+      self.proba[brand]={'total':total}
       self.max_brand[brand] = max(brand_dict.keys(),key=lambda x : brand_dict[x])
-      self.proba[brand] = float(brand_dict[self.max_brand[brand]])/float(total)
-      #if float(brand_dict[self.max_brand[brand]])!=float(total):
-      # print "proba plus petit que 1"
-      #print float(brand_dict[self.max_brand[brand]])
+      self.proba[brand]['proba'] = float(brand_dict[self.max_brand[brand]])/float(total)
       
 
       
@@ -119,8 +116,7 @@ class BrandAverage(Model):
 
   def cat_from_brand(self,brand):
     return self.max_brand[brand]
-    brand_dict = self.brands[brand]
-    return max(brand_dict.keys(),key=lambda x : brand_dict[x])
+    
 
 
 
